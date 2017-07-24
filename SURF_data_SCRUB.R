@@ -13,7 +13,7 @@ collectionMethodLookup <- read_excel("crosswalks/DPR-SURF_CollectionMethodsXWalk
 sampleTypeLookup <- read_excel("crosswalks/SURF_Sample_Types_jr.xlsx", col_names=TRUE)
 countyLookup <- read_excel("crosswalks/SURF_countyName_XWalk.xlsx", col_names=TRUE)
 methodLookup <- read_excel("crosswalks/Copy of xwalk DPR-SURF_MethodNames_v2.xlsx", col_names=TRUE)
-
+collectionDeviceLookup <- read_excel("crosswalks/CollectionDevice_XWALK.xlsx", col_names=TRUE)
 #import water data
 waterData <- read.csv(file="water_forSFEI.csv", header=TRUE, sep=",")
 #import sediment data
@@ -60,7 +60,7 @@ cols<- colnames(combinedData)
 blankCols <- cols[like(cols,"X_")] 
 combinedData <-combinedData[ , !(names(combinedData) %in% blankCols)]
 #change field names to CEDEN names
-colnames(combinedData)[which(colnames(combinedData) %in% c("STUDY_CD","COUNTY_CD","LOC_CD","SAMP_DATE","EXTRAC_DATE","ANLY_DATE","AGENCY_CD","CHEM_CD","CONC","LOQ","COLL_METH_CD","ANLY_METH_CD","SAMPLER_CD","SAMP_TYPE_CD","STORM_FLAG","LAB_CD","RMK_FLAG","REMARKS","SAMP_TIME","TRACE_FLAG","SAMP_ID2","MDL","RECORD_ID","Study_description","Weblink","CEDEN AnalyteName","CEDEN ProjectCode","CEDEN ProjectName","CEDEN LabAgencyCode","CEDEN AgencyCode","CEDEN CollectionMethod","CEDEN Method Name") )] <- c("ProjectCode_SURF","CountyCode_SURF","StationNumber_SURF","SampleDate","DigestExtractDate","AnalysisDate","AgencyCode_SURF","AnalyteCode_SURF","Result","RL","CollectionMethodCode_SURF","AnalyticalMethodCode_SURF","CollectionDeviceCode_SURF","SampleTypeCode_SURF","SampleComments","AnalyticalAgencyCode_SURF","CompCode","LabComments","SampleTime","ResQualCode","SampleID","MDL","Record_ID_SURF","ProjectDescription","ProjectURL","AnalyteName","ProjectCode","ProjectName","LabAgencyCode","AgencyCode","CollectionMethodCode","MethodName")
+colnames(combinedData)[which(colnames(combinedData) %in% c("STUDY_CD","COUNTY_CD","LOC_CD","SAMP_DATE","EXTRAC_DATE","ANLY_DATE","AGENCY_CD","CHEM_CD","CONC","LOQ","COLL_METH_CD","ANLY_METH_CD","SAMPLER_CD","SAMP_TYPE_CD","STORM_FLAG","LAB_CD","RMK_FLAG","REMARKS","SAMP_TIME","TRACE_FLAG","SAMP_ID2","MDL","RECORD_ID","Study_description","Weblink","CEDEN AnalyteName","CEDEN ProjectCode","CEDEN ProjectName","CEDEN LabAgencyCode","CEDEN AgencyCode","CEDEN CollectionMethod","CEDEN Method Name","SampleType") )] <- c("ProjectCode_SURF","CountyCode_SURF","StationNumber_SURF","SampleDate","DigestExtractDate","AnalysisDate","AgencyCode_SURF","AnalyteCode_SURF","Result","RL","CollectionMethodCode_SURF","AnalyticalMethodCode_SURF","CollectionDeviceCode_SURF","SampleTypeCode_SURF","SampleComments","AnalyticalAgencyCode_SURF","CompCode","LabComments","SampleTime","ResQualCode","SampleID","MDL","Record_ID_SURF","ProjectDescription","ProjectURL","AnalyteName","ProjectCode","ProjectName","LabAgencyCode","AgencyCode","CollectionMethodCode","MethodName","SampleTypeCode")
 #Add units as ug/L
 combinedData$UnitName <- "ug/L"
 #Concat the county and LOC_CD as StationCode 
@@ -71,15 +71,9 @@ combinedData$LabBatch <- paste(combinedData$ProjectCode, combinedData$LabAgencyC
 combinedData$SampleTime <- substr(as.POSIXct(sprintf("%04.0f", combinedData$SampleTime), format='%H%M'), 12, 16)
 #Replace empty values with defaults
 combinedData$SampleTime[is.na(combinedData$SampleTime)] <- '00:00'
-
-#Replace empty values with defaults
-
-
-
-#update collectionMethodCodes dependent on matrix
-combinedData<- within(combinedData, CollectionMethodCode[CollectionMethodCode == 'Water_Grab or Sed_Grab' & MatrixCode == 'sediment'] <- 'Sed_Grab')
-combinedData<- within(combinedData, CollectionMethodCode[CollectionMethodCode == 'Water_Grab or Sed_Grab' & MatrixCode == 'samplewater'] <- 'Water_Grab')
-#combinedData$CollectionMethodCode[combinedData$CollectionMethodCode == "Water_Grab_o_Sed_Grab"] <- ifelse(combinedData$MatrixCode =="sediment","Sed_Grab","Water_Grab")
+#combinedData$CompCode[is.na(combinedData$CompCode)] <- "NR"
+combinedData$MDL[is.na(combinedData$MDL)] <- -88
+combinedData$RL[is.na(combinedData$RL)] <- -88
 
 #Add not included required fields with defaults
 combinedData$EventCode <- "WQ"
@@ -92,6 +86,16 @@ combinedData$LabReplicate <- 1
 combinedData$DilutionFactor <- 1
 combinedData$PrepPreservationName <- "Not Recorded"
 combinedData$PrepPreservationCode <- "1/1/1950"
+
+#update sampling info from SAMP_TYPE_CD indicated in fields other than SampleTypeCode
+combinedData<- within(combinedData, MatrixCode[SampleTypeCode_SURF %in% c(9,10)] <- 'runoff')
+#assuming duplicates are sample replicates and not field blinf dupes
+combinedData<- within(combinedData, Replicate[SampleTypeCode_SURF == 7] <- 2)
+combinedData<- within(combinedData, SampleTypeCode[SampleTypeCode_SURF == 7] <- "Grab")
+
+#update collectionMethodCodes dependent on matrix
+combinedData<- within(combinedData, CollectionMethodCode[CollectionMethodCode == 'Water_Grab or Sed_Grab' & MatrixCode == 'sediment'] <- 'Sed_Grab')
+combinedData<- within(combinedData, CollectionMethodCode[CollectionMethodCode == 'Water_Grab or Sed_Grab' & MatrixCode == 'samplewater'] <- 'Water_Grab')
 
 #Remove SURF Code fields
 dropColumns <- c("CountyCode_SURF","StationNumber_SURF","CollectionMethodCode_SURF","AnalyticalMethodCode_SURF","CollectionDeviceCode_SURF","SampleTypeCode_SURF","AnalyticalAgencyCode_SURF","AgencyCode_SURF","AnalyteCode_SURF","CEDEN LabAgencyName")
