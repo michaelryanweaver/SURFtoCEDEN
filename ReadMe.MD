@@ -3,7 +3,7 @@
 
 
 ##Set up to run file
-1. the SURF_data_SCRUB.R file should be in a folder that is set as your R working directory
+1. the SURFtoCEDEN.R file should be in a folder that is set as your R working directory
 2. There should be a "crosswalks" subdirectory in this folder that contains the following files:
 	1. CollectionDevice_XWALK.xlsx
 	2. Copy of xwalk DPR-SURF_MethodNames_v2.xlsx
